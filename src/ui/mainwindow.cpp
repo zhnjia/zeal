@@ -157,6 +157,7 @@ struct TabState
     }
 
     QString searchQuery;
+  QString inPageQuery;
 
     // Content/Search results tree view state
     Zeal::SearchModel *searchModel = nullptr;
@@ -389,10 +390,34 @@ MainWindow::MainWindow(Core::Application *app, QWidget *parent) :
     });
 
     connect(ui->lineEdit, &QLineEdit::textChanged, [this](const QString &text) {
-        if (text == currentTabState()->searchQuery)
-            return;
+        QStringList strings = text.split(' ', QString::SkipEmptyParts);
+        QString query, tocQuery;
+        if (strings.size() > 1) {
+          if (strings.at(0).contains(':')) {
+            if (strings.at(0).endsWith(':')) {
+              query = strings.at(0) + strings.at(1);
+            } else {
+              query = strings.at(0);
+            }
+          }
 
-        currentTabState()->searchQuery = text;
+          if (strings.size() > 2) {
+            tocQuery = strings.at(2);
+          }
+        } else {
+          query = strings.at(0);
+        }
+
+        if (query == currentTabState()->searchQuery) {
+          if (tocQuery == currentTabState()->inPageQuery) {
+            return;
+          } else {
+
+          }
+          return;
+        }
+
+        currentTabState()->searchQuery = query;
         m_cancelSearch.cancel();
         m_cancelSearch = CancellationToken();
         m_application->docsetRegistry()->search(text, m_cancelSearch);
